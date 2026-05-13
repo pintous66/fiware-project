@@ -1,0 +1,40 @@
+flowchart TD
+    subgraph Simulators
+        D1["Drone 1"]
+        D2["Drone 2"]
+    end
+
+    subgraph Communication["Communication Layer"]
+        M["Mosquitto MQTT Broker"]
+    end
+
+    subgraph FIWARE
+        IA["IoT Agent JSON"]
+        O["Orion Context Broker"]
+        DB["MongoDB<br/>FIWARE Internal Persistence"]
+    end
+
+    subgraph Applications["Applications"]
+        CT["Control Tower"]
+        CTDB["Control Tower DB<br/>Historical Telemetry"]
+        NR["Node-RED Dashboard"]
+        P["Provisioner<br/>Startup Helper<br/>IoT Agent Configuration"]
+    end
+
+    D1 --> M
+    D2 --> M
+
+    M --> IA
+    IA --> O
+
+    O --> CT
+    CT --> O
+
+    CT --> CTDB
+    NR --> O
+    NR --> CTDB
+
+    P --> IA
+
+    O --> DB
+    IA --> DB

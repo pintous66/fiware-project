@@ -216,7 +216,6 @@ def create_subscription() -> None:
             },
             "attrs": watched_attrs,
         },
-        "throttling": 2,
     }
 
     response = requests.post(

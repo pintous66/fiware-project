@@ -1,0 +1,123 @@
+services:
+  # 1. Base de Dados
+  mongo-db:
+    image: mongo:4.4
+    hostname: mongo-db
+    container_name: db-mongo
+    ports:
+      - "27017:27017"
+    command: --nojournal
+
+  # 2. FIWARE Orion
+  fiware-orion:
+    image: fiware/orion
+    hostname: orion
+    container_name: fiware-orion
+    depends_on:
+      - mongo-db
+    ports:
+      - "1026:1026"
+    command: -dbURI mongodb://mongo-db:27017 -logLevel DEBUG
+
+  # 3. Mosquitto MQTT (O Canal de Comunicação dos Drones)
+  mosquitto:
+    image: eclipse-mosquitto:2
+    hostname: mosquitto
+    container_name: mqtt-broker
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  # 4. FIWARE IoT Agent
+  iot-agent:
+    image: fiware/iotagent-json
+    hostname: iot-agent
+    container_name: fiware-iot-agent
+    depends_on:
+      - mongo-db
+      - mosquitto
+      - fiware-orion
+    ports:
+      - "4041:4041"
+    environment:
+      - IOTA_CB_HOST=fiware-orion
+      - IOTA_CB_PORT=1026
+      - IOTA_NORTH_PORT=4041
+      - IOTA_REGISTRY_TYPE=mongodb
+      - IOTA_LOG_LEVEL=DEBUG
+      - IOTA_TIMESTAMP=true
+      - IOTA_CB_NGSI_VERSION=v2
+      - IOTA_AUTOCAST=true
+      - IOTA_MONGO_URI=mongodb://mongo-db:27017/iotagentjson
+      - IOTA_MQTT_HOST=mosquitto
+      - IOTA_MQTT_PORT=1883
+      - IOTA_PROVIDER_URL=http://iot-agent:4041
+  # Config iot agent para drones      
+  iot-agent-provisioner:
+    image: alpine:3.20
+    container_name: iot-agent-provisioner
+    depends_on:
+      - iot-agent
+      - fiware-orion
+    volumes:
+      - ./provisioning/provision-iot-agent.sh:/provision-iot-agent.sh
+    entrypoint: ["/bin/sh", "-c", "apk add --no-cache curl && /bin/sh /provision-iot-agent.sh"]
+    restart: "no"
+#drone 1    
+  drone1:
+    build:
+      context: ./drones
+    container_name: drone1-simulator
+    depends_on:
+      - mosquitto
+      - iot-agent-provisioner
+    environment:
+      - DRONE_ID=drone1
+      - IOTA_API_KEY=dronekey
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MOVEMENT_INTERVAL=2
+      - MOVEMENT_STEP=1
+      - BATTERY_LOSS_PER_MOVE=0.1
+      - CHARGE_RATE=2
+    restart: unless-stopped
+ # drone 2
+  drone2:
+    build:
+      context: ./drones
+    container_name: drone2-simulator
+    depends_on:
+      - mosquitto
+      - iot-agent-provisioner
+    environment:
+      - DRONE_ID=drone2
+      - IOTA_API_KEY=dronekey
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MOVEMENT_INTERVAL=2
+      - MOVEMENT_STEP=1
+      - BATTERY_LOSS_PER_MOVE=0.1
+      - CHARGE_RATE=2
+    restart: unless-stopped
+    # control tower
+  control-tower:
+    build:
+      context: ./control-tower
+    container_name: control-tower
+    depends_on:
+      - fiware-orion
+      - iot-agent
+      - drone1
+      - drone2
+    ports:
+      - "8080:8080"
+    environment:
+      - ORION_URL=http://fiware-orion:1026
+      - FIWARE_SERVICE=uav
+      - FIWARE_SERVICEPATH=/
+      - DRONE_ENTITIES=Drone1,Drone2
+      - LOW_BATTERY_THRESHOLD=20
+      - NOTIFICATION_URL=http://control-tower:8080/notify
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

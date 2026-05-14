@@ -121,3 +121,57 @@ services:
       - NOTIFICATION_URL=http://control-tower:8080/notify
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
+
+  node-red:
+    build:
+      context: ./nodered
+    hostname: node-red
+    container_name: node-red
+    depends_on:
+      - fiware-orion
+      - control-tower
+    ports:
+      - "1880:1880"
+    environment:
+      - TZ=Europe/Lisbon
+      - FLOWS=flows.json
+    restart: unless-stopped
+
+  orion-subscription-provisioner:
+    image: alpine:3.20
+    container_name: orion-subscription-provisioner
+    depends_on:
+      - fiware-orion
+      - node-red
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache curl
+        sleep 15
+
+        curl -X POST "http://fiware-orion:1026/v2/subscriptions" \
+          -H "Content-Type: application/json" \
+          -H "Fiware-Service: uav" \
+          -H "Fiware-ServicePath: /" \
+          -d '{
+            "description": "Notify Node-RED about drone updates",
+            "subject": {
+              "entities": [
+                {
+                  "idPattern": "Drone.*",
+                  "type": "Drone"
+                }
+              ],
+              "condition": {
+                "attrs": ["battery", "x", "y", "status"]
+              }
+            },
+            "notification": {
+              "http": {
+                "url": "http://node-red:1880/orion/notify"
+              },
+              "attrs": ["battery", "x", "y", "status"]
+            }
+          }'
+    restart: "no"

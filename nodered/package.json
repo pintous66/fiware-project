@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "start": "node $NODE_OPTIONS node_modules/node-red/red.js $FLOWS"
+  },
+  "dependencies": {
+    "@flowfuse/node-red-dashboard": "^1.30.2"
+  }
+}

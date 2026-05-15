@@ -1,0 +1,427 @@
+[
+    {
+        "id": "be926c08a4713f21",
+        "type": "tab",
+        "label": "Drone Data Pipeline",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "3bc676fe8ac6be47",
+        "type": "tab",
+        "label": "Drone Dashboard",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "98d7b49c9211336c",
+        "type": "tab",
+        "label": "Drone Map Page",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "d0d6686346d54489",
+        "type": "tab",
+        "label": "Logs",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "d556e9f3bf8cb501",
+        "type": "ui-base",
+        "name": "Drone",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "temporary",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": 1,
+        "showDisconnectNotification": true,
+        "allowInstall": false
+    },
+    {
+        "id": "drone_ui_theme",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "a6c88f0caa76cd84",
+        "type": "ui-page",
+        "name": "Map",
+        "ui": "d556e9f3bf8cb501",
+        "path": "/map",
+        "icon": "map",
+        "layout": "grid",
+        "theme": "drone_ui_theme",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 2,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "5e7a2b52ea1c4e69",
+        "type": "ui-page",
+        "name": "Drones",
+        "ui": "d556e9f3bf8cb501",
+        "path": "/drones",
+        "icon": "quadcopter",
+        "layout": "grid",
+        "theme": "drone_ui_theme",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "c8796c9574597053",
+        "type": "ui-page",
+        "name": "Logs",
+        "ui": "d556e9f3bf8cb501",
+        "path": "/logs",
+        "icon": "forum",
+        "layout": "grid",
+        "theme": "drone_ui_theme",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 3,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "4e7d4f8c9e25b973",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "@flowfuse/node-red-dashboard": "1.30.2"
+        }
+    },
+    {
+        "id": "a7c175d3fbe880d7",
+        "type": "http in",
+        "z": "be926c08a4713f21",
+        "name": "Orion subscription endpoint",
+        "url": "/orion/notify",
+        "method": "post",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 150,
+        "y": 100,
+        "wires": [
+            [
+                "36f3011c25913471"
+            ]
+        ]
+    },
+    {
+        "id": "36f3011c25913471",
+        "type": "function",
+        "z": "be926c08a4713f21",
+        "name": "Save drone information",
+        "func": "let drones = flow.get(\"drones\") || {};\n\nfunction xyToLatLon(x, y) {\n    const ISEP_LAT = 41.1779;\n    const ISEP_LON = -8.6080;\n    const AREA_SIZE_METERS = 100;\n\n    const offsetX = ((x - 50) / 100) * AREA_SIZE_METERS;\n    const offsetY = ((y - 50) / 100) * AREA_SIZE_METERS;\n\n    const lat = ISEP_LAT + (offsetY / 111320);\n    const lon = ISEP_LON + (offsetX / (111320 * Math.cos(ISEP_LAT * Math.PI / 180)));\n\n    return { lat, lon };\n}\n\nconst data = msg.payload.data || [];\n\nfor (const drone of data) {\n    let id = drone.id;\n\n    if (id === \"Drone1\" || id === \"drone1\") {\n        id = \"Drone:001\";\n    }\n\n    if (id === \"Drone2\" || id === \"drone2\") {\n        id = \"Drone:002\";\n    }\n\n    const rawX = drone.x?.value;\n    const rawY = drone.y?.value;\n\n    if (rawX === undefined || rawY === undefined) continue;\n\n    const x = Math.max(0, Math.min(100, Number(rawX)));\n    const y = Math.max(0, Math.min(100, Number(rawY)));\n\n    const pos = xyToLatLon(x, y);\n\n    drones[id] = {\n        id,\n        type: drone.type,\n        battery: drone.battery?.value,\n        status: drone.status?.value,\n        x,\n        y,\n        lat: pos.lat,\n        lon: pos.lon\n    };\n}\n\nflow.set(\"drones\", drones);\n\nconst dashboardMsg = {\n    payload: Object.values(drones)\n};\n\nlet responseMsg = null;\n\nif (msg.req && msg.res) {\n    responseMsg = {\n        req: msg.req,\n        res: msg.res,\n        statusCode: 200,\n        payload: {\n            status: \"received\"\n        }\n    };\n}\n\nreturn [dashboardMsg, dashboardMsg, responseMsg];",
+        "outputs": 3,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 100,
+        "wires": [
+            [
+                "f7051d409ed6aef6",
+                "0ce7f0dffcb43970"
+            ],
+            [
+                "22b6e8ccb98cbcce"
+            ],
+            [
+                "53f75b2d1c8fac2b"
+            ]
+        ]
+    },
+    {
+        "id": "53f75b2d1c8fac2b",
+        "type": "http response",
+        "z": "be926c08a4713f21",
+        "name": "HTTP 200 to Orion",
+        "statusCode": "",
+        "headers": {},
+        "x": 690,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "f7051d409ed6aef6",
+        "type": "function",
+        "z": "be926c08a4713f21",
+        "name": "Create battery alert",
+        "func": "const drones = msg.payload || [];\nlet alreadyAlerted = flow.get(\"alreadyAlerted\") || {};\n\nfor (const drone of drones) {\n    const battery = drone.battery;\n\n    if (battery !== undefined && battery <= 20) {\n        if (!alreadyAlerted[drone.id]) {\n            alreadyAlerted[drone.id] = true;\n            flow.set(\"alreadyAlerted\", alreadyAlerted);\n\n            return {\n                payload: {\n                    title: \"Low Battery Warning\",\n                    message: `${drone.id} battery is low: ${battery}%`,\n                    droneId: drone.id,\n                    battery: battery,\n                    severity: battery <= 10 ? \"critical\" : \"warning\"\n                }\n            };\n        }\n    } else {\n        alreadyAlerted[drone.id] = false;\n    }\n}\n\nflow.set(\"alreadyAlerted\", alreadyAlerted);\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
+        "y": 40,
+        "wires": [
+            [
+                "98b831f092b2c560"
+            ]
+        ]
+    },
+    {
+        "id": "0ce7f0dffcb43970",
+        "type": "link out",
+        "z": "be926c08a4713f21",
+        "name": "to dashboard page",
+        "mode": "link",
+        "links": [
+            "9cb11dabeddb3bde"
+        ],
+        "x": 615,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "22b6e8ccb98cbcce",
+        "type": "link out",
+        "z": "be926c08a4713f21",
+        "name": "to map page",
+        "mode": "link",
+        "links": [
+            "f60b2c1c0a9a4d3f"
+        ],
+        "x": 615,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "98b831f092b2c560",
+        "type": "ui-template",
+        "z": "be926c08a4713f21",
+        "group": "",
+        "page": "",
+        "ui": "d556e9f3bf8cb501",
+        "name": " Custom Alert Toast",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "head": "",
+        "format": "<template>\n  <Transition name=\"toast-fade\">\n    <div v-if=\"visible\" :class=\"['custom-toast', alertClass]\">\n      <div class=\"toast-icon\">\n        {{ icon }}\n      </div>\n\n      <div class=\"toast-content\">\n        <div class=\"toast-title\">{{ alert.title }}</div>\n        <div class=\"toast-message\">{{ alert.message }}</div>\n      </div>\n\n      <button class=\"toast-close\" @click=\"visible = false\">\n        ×\n      </button>\n    </div>\n  </Transition>\n</template>\n\n<script>\nexport default {\n  data() {\n    return {\n      visible: false,\n      alert: {\n        title: \"\",\n        message: \"\",\n        severity: \"warning\"\n      },\n      timeoutId: null\n    }\n  },\n\n  computed: {\n    alertClass() {\n      return this.alert.severity === \"critical\"\n        ? \"toast-critical\"\n        : \"toast-warning\"\n    },\n\n    icon() {\n      return this.alert.severity === \"critical\"\n        ? \"!\"\n        : \"!\"\n    }\n  },\n\n  watch: {\n    msg: {\n      handler(newMsg) {\n        if (!newMsg || !newMsg.payload) return\n\n        if (typeof newMsg.payload === \"string\") {\n          this.alert = {\n            title: \"Drone Alert\",\n            message: newMsg.payload,\n            severity: \"warning\"\n          }\n        } else {\n          this.alert = {\n            title: newMsg.payload.title || \"Drone Alert\",\n            message: newMsg.payload.message || \"Alert triggered\",\n            severity: newMsg.payload.severity || \"warning\"\n          }\n        }\n\n        this.visible = true\n\n        if (this.timeoutId) {\n          clearTimeout(this.timeoutId)\n        }\n\n        this.timeoutId = setTimeout(() => {\n          this.visible = false\n        }, 5000)\n      },\n      deep: true\n    }\n  }\n}\n</script>\n\n<style>\n.custom-toast {\n  position: fixed;\n  top: 82px;\n  right: 24px;\n  z-index: 99999;\n  width: 360px;\n  min-height: 76px;\n  display: grid;\n  grid-template-columns: 46px 1fr 28px;\n  gap: 12px;\n  align-items: center;\n  padding: 14px 16px;\n  border-radius: 14px;\n  background: #ffffff;\n  border: 1px solid #d0d7de;\n  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);\n  font-family: \"Segoe UI\", Arial, sans-serif;\n}\n\n.toast-warning {\n  border-left: 6px solid #ef6c00;\n}\n\n.toast-critical {\n  border-left: 6px solid #d32f2f;\n}\n\n.toast-icon {\n  width: 42px;\n  height: 42px;\n  border-radius: 50%;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  color: white;\n  font-size: 24px;\n  font-weight: 900;\n}\n\n.toast-warning .toast-icon {\n  background: #ef6c00;\n}\n\n.toast-critical .toast-icon {\n  background: #d32f2f;\n  animation: alert-pulse 1s infinite;\n}\n\n.toast-content {\n  min-width: 0;\n}\n\n.toast-title {\n  font-size: 15px;\n  font-weight: 800;\n  color: #1f2933;\n  margin-bottom: 4px;\n}\n\n.toast-message {\n  font-size: 14px;\n  color: #52616b;\n}\n\n.toast-close {\n  border: none;\n  background: transparent;\n  font-size: 24px;\n  color: #6b7280;\n  cursor: pointer;\n  line-height: 1;\n}\n\n.toast-close:hover {\n  color: #111827;\n}\n\n.toast-fade-enter-active,\n.toast-fade-leave-active {\n  transition: all 0.25s ease;\n}\n\n.toast-fade-enter-from,\n.toast-fade-leave-to {\n  opacity: 0;\n  transform: translateY(-12px) scale(0.96);\n}\n\n@keyframes alert-pulse {\n  0% {\n    transform: scale(1);\n    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.45);\n  }\n\n  70% {\n    transform: scale(1.08);\n    box-shadow: 0 0 0 10px rgba(211, 47, 47, 0);\n  }\n\n  100% {\n    transform: scale(1);\n    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0);\n  }\n}\n</style>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "widget:ui",
+        "className": "",
+        "x": 930,
+        "y": 40,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9cb11dabeddb3bde",
+        "type": "link in",
+        "z": "3bc676fe8ac6be47",
+        "name": "drone data in",
+        "links": [],
+        "x": 115,
+        "y": 120,
+        "wires": [
+            [
+                "fa1bd6c2fb90de8d"
+            ]
+        ]
+    },
+    {
+        "id": "fa1bd6c2fb90de8d",
+        "type": "ui-template",
+        "z": "3bc676fe8ac6be47",
+        "group": "",
+        "page": "5e7a2b52ea1c4e69",
+        "ui": "",
+        "name": "Single Drone Dashboard",
+        "order": 1,
+        "width": "12",
+        "height": "12",
+        "head": "",
+        "format": "<template>\n  <div class=\"mission-dashboard\">\n    <div class=\"dashboard-grid\">\n      <div class=\"drone-column\">\n        <div class=\"panel panel-battery\">\n          <div class=\"panel-title\">\n            <span>BATTERY TELEMETRY - DRONE ALPHA</span>\n            <span :class=\"statusDot(droneA)\">●</span>\n          </div>\n          <div class=\"battery-layout\">\n            <div class=\"battery-graphic\">\n              <div class=\"battery-shell\">\n                <div class=\"battery-level\" :class=\"{ danger: battery(droneA) <= 20 }\" :style=\"{ height: battery(droneA) + '%' }\"></div>\n              </div>\n              <span>LiPo</span>\n            </div>\n            <div class=\"battery-main\">\n              <div class=\"battery-percent\" :class=\"{ dangerText: battery(droneA) <= 20 }\">{{ battery(droneA) }}%</div>\n              <div class=\"battery-label\">BATTERY STATUS</div>\n              <div class=\"battery-bar\">\n                <div class=\"battery-bar-fill\" :class=\"{ danger: battery(droneA) <= 20 }\" :style=\"{ width: battery(droneA) + '%' }\"></div>\n              </div>\n            </div>\n            <div class=\"telemetry-side\">\n              <div class=\"mini-chart\"></div>\n              <div class=\"small-stat\">X: {{ format(droneA?.x) }}</div>\n              <div class=\"mini-chart second\"></div>\n              <div class=\"small-stat\">Y: {{ format(droneA?.y) }}</div>\n            </div>\n          </div>\n        </div>\n\n        <div class=\"panel panel-info\">\n          <div class=\"panel-title\">\n            <span>SYSTEM INFO - DRONE ALPHA</span>\n            <span :class=\"statusDot(droneA)\">●</span>\n          </div>\n          <div class=\"info-layout\">\n            <div class=\"drone-diagram-svg\">\n              <svg width=\"96\" height=\"96\" viewBox=\"-38 -38 76 76\" xmlns=\"http://www.w3.org/2000/svg\">\n                <line x1=\"-22\" y1=\"-22\" x2=\"-10\" y2=\"-10\" stroke=\"#1565C0\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n                <line x1=\"22\" y1=\"-22\" x2=\"10\" y2=\"-10\" stroke=\"#1565C0\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n                <line x1=\"-22\" y1=\"22\" x2=\"-10\" y2=\"10\" stroke=\"#1565C0\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n                <line x1=\"22\" y1=\"22\" x2=\"10\" y2=\"10\" stroke=\"#1565C0\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n                <circle cx=\"-26\" cy=\"-26\" r=\"10\" fill=\"#1565C0\" />\n                <circle cx=\"26\" cy=\"-26\" r=\"10\" fill=\"#1565C0\" />\n                <circle cx=\"-26\" cy=\"26\" r=\"10\" fill=\"#1565C0\" />\n                <circle cx=\"26\" cy=\"26\" r=\"10\" fill=\"#1565C0\" />\n                <line x1=\"-33\" y1=\"-26\" x2=\"-19\" y2=\"-26\" stroke=\"#90CAF9\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"-26\" y1=\"-33\" x2=\"-26\" y2=\"-19\" stroke=\"#90CAF9\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"19\" y1=\"-26\" x2=\"33\" y2=\"-26\" stroke=\"#90CAF9\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"26\" y1=\"-33\" x2=\"26\" y2=\"-19\" stroke=\"#90CAF9\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"-33\" y1=\"26\" x2=\"-19\" y2=\"26\" stroke=\"#90CAF9\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"-26\" y1=\"19\" x2=\"-26\" y2=\"33\" stroke=\"#90CAF9\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"19\" y1=\"26\" x2=\"33\" y2=\"26\" stroke=\"#90CAF9\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"26\" y1=\"19\" x2=\"26\" y2=\"33\" stroke=\"#90CAF9\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <polygon points=\"0,-14 12,-7 12,7 0,14 -12,7 -12,-7\" fill=\"#1976D2\" />\n                <circle cx=\"0\" cy=\"0\" r=\"5\" fill=\"#1565C0\" />\n                <circle cx=\"0\" cy=\"0\" r=\"2\" fill=\"#90CAF9\" />\n                <polygon points=\"0,-19 4,-14 -4,-14\" fill=\"#90CAF9\" />\n              </svg>\n            </div>\n            <div class=\"info-text\">\n              <div>Model: <strong>AeroNav X4 Mk.I</strong></div>\n              <div>Firmware: <strong>v3.2.1-stable</strong></div>\n              <div>Sensors: <strong>{{ sensorStatus(droneA) }}</strong></div>\n              <div>Status: <strong>{{ droneA?.status || \"N/A\" }}</strong></div>\n              <div>Battery: <strong>{{ battery(droneA) }}%</strong></div>\n            </div>\n          </div>\n        </div>\n\n        <div class=\"panel panel-map\">\n          <div class=\"panel-title\">\n            <span>LOCATION MAP - DRONE ALPHA</span>\n            <span>MAP</span>\n          </div>\n          <div ref=\"mapA\" class=\"mini-map\"></div>\n          <div class=\"map-footer\">\n            <span>X: {{ format(droneA?.x) }}</span>\n            <span>Y: {{ format(droneA?.y) }}</span>\n            <span>{{ droneA?.id || \"Drone:001\" }}</span>\n          </div>\n        </div>\n      </div>\n\n      <div class=\"drone-column\">\n        <div class=\"panel panel-battery\">\n          <div class=\"panel-title\">\n            <span>BATTERY TELEMETRY - DRONE BETA</span>\n            <span :class=\"statusDot(droneB)\">●</span>\n          </div>\n          <div class=\"battery-layout\">\n            <div class=\"battery-graphic orange\">\n              <div class=\"battery-shell\">\n                <div class=\"battery-level\" :class=\"{ danger: battery(droneB) <= 20 }\" :style=\"{ height: battery(droneB) + '%' }\"></div>\n              </div>\n              <span>LiPo</span>\n            </div>\n            <div class=\"battery-main\">\n              <div class=\"battery-percent\" :class=\"{ dangerText: battery(droneB) <= 20 }\">{{ battery(droneB) }}%</div>\n              <div class=\"battery-label\">BATTERY STATUS</div>\n              <div class=\"battery-bar\">\n                <div class=\"battery-bar-fill orange\" :class=\"{ danger: battery(droneB) <= 20 }\" :style=\"{ width: battery(droneB) + '%' }\"></div>\n              </div>\n            </div>\n            <div class=\"telemetry-side\">\n              <div class=\"mini-chart orange\"></div>\n              <div class=\"small-stat\">X: {{ format(droneB?.x) }}</div>\n              <div class=\"mini-chart second orange\"></div>\n              <div class=\"small-stat\">Y: {{ format(droneB?.y) }}</div>\n            </div>\n          </div>\n        </div>\n\n        <div class=\"panel panel-info\">\n          <div class=\"panel-title\">\n            <span>SYSTEM INFO - DRONE BETA</span>\n            <span :class=\"statusDot(droneB)\">●</span>\n          </div>\n          <div class=\"info-layout\">\n            <div class=\"drone-diagram-svg\">\n              <svg width=\"96\" height=\"96\" viewBox=\"-38 -38 76 76\" xmlns=\"http://www.w3.org/2000/svg\">\n                <line x1=\"-20\" y1=\"-26\" x2=\"-10\" y2=\"-10\" stroke=\"#E65100\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n                <line x1=\"20\" y1=\"-26\" x2=\"10\" y2=\"-10\" stroke=\"#E65100\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n                <line x1=\"-20\" y1=\"26\" x2=\"-10\" y2=\"10\" stroke=\"#E65100\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n                <line x1=\"20\" y1=\"26\" x2=\"10\" y2=\"10\" stroke=\"#E65100\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n                <rect x=\"-33\" y=\"-33\" width=\"18\" height=\"18\" rx=\"3\" fill=\"#E65100\" />\n                <rect x=\"15\" y=\"-33\" width=\"18\" height=\"18\" rx=\"3\" fill=\"#E65100\" />\n                <rect x=\"-33\" y=\"15\" width=\"18\" height=\"18\" rx=\"3\" fill=\"#E65100\" />\n                <rect x=\"15\" y=\"15\" width=\"18\" height=\"18\" rx=\"3\" fill=\"#E65100\" />\n                <line x1=\"-31\" y1=\"-31\" x2=\"-17\" y2=\"-17\" stroke=\"#FFCC80\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"-17\" y1=\"-31\" x2=\"-31\" y2=\"-17\" stroke=\"#FFCC80\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"17\" y1=\"-31\" x2=\"31\" y2=\"-17\" stroke=\"#FFCC80\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"31\" y1=\"-31\" x2=\"17\" y2=\"-17\" stroke=\"#FFCC80\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"-31\" y1=\"17\" x2=\"-17\" y2=\"31\" stroke=\"#FFCC80\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"-17\" y1=\"17\" x2=\"-31\" y2=\"31\" stroke=\"#FFCC80\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"17\" y1=\"17\" x2=\"31\" y2=\"31\" stroke=\"#FFCC80\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <line x1=\"31\" y1=\"17\" x2=\"17\" y2=\"31\" stroke=\"#FFCC80\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n                <rect x=\"-12\" y=\"-12\" width=\"24\" height=\"24\" rx=\"2\" fill=\"#F57C00\" transform=\"rotate(45)\" />\n                <circle cx=\"0\" cy=\"0\" r=\"5\" fill=\"#E65100\" />\n                <circle cx=\"0\" cy=\"0\" r=\"2\" fill=\"#FFCC80\" />\n                <polygon points=\"0,-19 4,-14 -4,-14\" fill=\"#FFCC80\" />\n              </svg>\n            </div>\n            <div class=\"info-text\">\n              <div>Model: <strong>SurveyMage S1</strong></div>\n              <div>Firmware: <strong>v1.1.0-beta</strong></div>\n              <div>Sensors: <strong>{{ sensorStatus(droneB) }}</strong></div>\n              <div>Status: <strong>{{ droneB?.status || \"N/A\" }}</strong></div>\n              <div>Battery: <strong>{{ battery(droneB) }}%</strong></div>\n            </div>\n          </div>\n        </div>\n\n        <div class=\"panel panel-map\">\n          <div class=\"panel-title\">\n            <span>LOCATION MAP - DRONE BETA</span>\n            <span>MAP</span>\n          </div>\n          <div ref=\"mapB\" class=\"mini-map\"></div>\n          <div class=\"map-footer\">\n            <span>X: {{ format(droneB?.x) }}</span>\n            <span>Y: {{ format(droneB?.y) }}</span>\n            <span>{{ droneB?.id || \"Drone:002\" }}</span>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n</template>\n\n<script>\nexport default {\n  data() {\n    return { L: null, maps: {}, markers: {} }\n  },\n\n  computed: {\n    drones() {\n      return this.msg?.payload || []\n    },\n    droneA() {\n      return this.drones.find(d => d.id === \"Drone:001\") || null\n    },\n    droneB() {\n      return this.drones.find(d => d.id === \"Drone:002\") || null\n    }\n  },\n\n  async mounted() {\n    await this.loadLeaflet()\n    this.initMaps()\n    this.updateMaps()\n    setTimeout(() => { Object.values(this.maps).forEach(map => map.invalidateSize()) }, 500)\n  },\n\n  watch: {\n    msg: {\n      async handler() {\n        await this.loadLeaflet()\n        this.initMaps()\n        this.updateMaps()\n        setTimeout(() => { Object.values(this.maps).forEach(map => map.invalidateSize()) }, 200)\n      },\n      deep: true\n    }\n  },\n\n  methods: {\n    async loadLeaflet() {\n      if (this.L) return\n      if (!document.getElementById(\"leaflet-css\")) {\n        const link = document.createElement(\"link\")\n        link.id = \"leaflet-css\"\n        link.rel = \"stylesheet\"\n        link.href = \"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\"\n        document.head.appendChild(link)\n      }\n      const leafletModule = await import(\"https://esm.sh/leaflet@1.9.4\")\n      this.L = leafletModule.default || leafletModule\n    },\n\n    initMaps() {\n      if (!this.L) return\n\n      const fixedMapOptions = {\n        zoomControl: false,\n        attributionControl: false,\n        dragging: false,\n        scrollWheelZoom: false,\n        doubleClickZoom: false,\n        boxZoom: false,\n        keyboard: false,\n        touchZoom: false\n      }\n\n      const tileOptions = {\n        maxZoom: 18,\n        minZoom: 18\n      }\n\n      if (!this.maps.alpha && this.$refs.mapA) {\n        this.maps.alpha = this.L\n          .map(this.$refs.mapA, fixedMapOptions)\n          .setView([41.1779, -8.6080], 18)\n\n        this.L\n          .tileLayer(\"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png\", tileOptions)\n          .addTo(this.maps.alpha)\n      }\n\n      if (!this.maps.beta && this.$refs.mapB) {\n        this.maps.beta = this.L\n          .map(this.$refs.mapB, fixedMapOptions)\n          .setView([41.1779, -8.6080], 18)\n\n        this.L\n          .tileLayer(\"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png\", tileOptions)\n          .addTo(this.maps.beta)\n      }\n    },\n\n    updateMaps() {\n      this.updateDroneMap(\"alpha\", this.droneA, \"D1\")\n      this.updateDroneMap(\"beta\", this.droneB, \"D2\")\n    },\n\n    updateDroneMap(key, drone, label) {\n    if (!this.L || !this.maps[key] || !drone) return\n    if (drone.lat === undefined || drone.lon === undefined) return\n\n    const isAlert = drone.battery !== undefined && drone.battery <= 20 \n    const isAlpha=drone.id===\"Drone:001\" \n    const alertColor=isAlert ? '#d32f2f' : (isAlpha ? '#1565C0' : '#E65100' ) \n    const alertLight=isAlert ? '#ef9a9a' : (isAlpha ? '#90CAF9' : '#FFCC80' ) \n    const alertBody=isAlert ? '#c62828' : (isAlpha ? '#1976D2' : '#F57C00' )\n    \n   const svgAlpha=`<svg width=\"44\" height=\"44\" viewBox=\"-38 -38 76 76\" xmlns=\"http://www.w3.org/2000/svg\">\n      <line x1=\"-22\" y1=\"-22\" x2=\"-10\" y2=\"-10\" stroke=\"${alertColor}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n      <line x1=\"22\" y1=\"-22\" x2=\"10\" y2=\"-10\" stroke=\"${alertColor}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n      <line x1=\"-22\" y1=\"22\" x2=\"-10\" y2=\"10\" stroke=\"${alertColor}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n      <line x1=\"22\" y1=\"22\" x2=\"10\" y2=\"10\" stroke=\"${alertColor}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n      <circle cx=\"-26\" cy=\"-26\" r=\"10\" fill=\"${alertColor}\" />\n      <circle cx=\"26\" cy=\"-26\" r=\"10\" fill=\"${alertColor}\" />\n      <circle cx=\"-26\" cy=\"26\" r=\"10\" fill=\"${alertColor}\" />\n      <circle cx=\"26\" cy=\"26\" r=\"10\" fill=\"${alertColor}\" />\n      <line x1=\"-33\" y1=\"-26\" x2=\"-19\" y2=\"-26\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <line x1=\"-26\" y1=\"-33\" x2=\"-26\" y2=\"-19\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <line x1=\"19\" y1=\"-26\" x2=\"33\" y2=\"-26\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <line x1=\"26\" y1=\"-33\" x2=\"26\" y2=\"-19\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <line x1=\"-33\" y1=\"26\" x2=\"-19\" y2=\"26\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <line x1=\"-26\" y1=\"19\" x2=\"-26\" y2=\"33\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <line x1=\"19\" y1=\"26\" x2=\"33\" y2=\"26\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <line x1=\"26\" y1=\"19\" x2=\"26\" y2=\"33\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <polygon points=\"0,-14 12,-7 12,7 0,14 -12,7 -12,-7\" fill=\"${alertBody}\" />\n      <circle cx=\"0\" cy=\"0\" r=\"5\" fill=\"${alertColor}\" />\n      <circle cx=\"0\" cy=\"0\" r=\"2\" fill=\"${alertLight}\" />\n      <polygon points=\"0,-19 4,-14 -4,-14\" fill=\"${alertLight}\" />\n      </svg>`\n    \n      const svgBeta = `<svg width=\"44\" height=\"44\" viewBox=\"-38 -38 76 76\" xmlns=\"http://www.w3.org/2000/svg\">\n        <line x1=\"-20\" y1=\"-26\" x2=\"-10\" y2=\"-10\" stroke=\"${alertColor}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n        <line x1=\"20\" y1=\"-26\" x2=\"10\" y2=\"-10\" stroke=\"${alertColor}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n        <line x1=\"-20\" y1=\"26\" x2=\"-10\" y2=\"10\" stroke=\"${alertColor}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n        <line x1=\"20\" y1=\"26\" x2=\"10\" y2=\"10\" stroke=\"${alertColor}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n        <rect x=\"-33\" y=\"-33\" width=\"18\" height=\"18\" rx=\"3\" fill=\"${alertColor}\" />\n        <rect x=\"15\" y=\"-33\" width=\"18\" height=\"18\" rx=\"3\" fill=\"${alertColor}\" />\n        <rect x=\"-33\" y=\"15\" width=\"18\" height=\"18\" rx=\"3\" fill=\"${alertColor}\" />\n        <rect x=\"15\" y=\"15\" width=\"18\" height=\"18\" rx=\"3\" fill=\"${alertColor}\" />\n        <line x1=\"-31\" y1=\"-31\" x2=\"-17\" y2=\"-17\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <line x1=\"-17\" y1=\"-31\" x2=\"-31\" y2=\"-17\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <line x1=\"17\" y1=\"-31\" x2=\"31\" y2=\"-17\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <line x1=\"31\" y1=\"-31\" x2=\"17\" y2=\"-17\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <line x1=\"-31\" y1=\"17\" x2=\"-17\" y2=\"31\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <line x1=\"-17\" y1=\"17\" x2=\"-31\" y2=\"31\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <line x1=\"17\" y1=\"17\" x2=\"31\" y2=\"31\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <line x1=\"31\" y1=\"17\" x2=\"17\" y2=\"31\" stroke=\"${alertLight}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <rect x=\"-12\" y=\"-12\" width=\"24\" height=\"24\" rx=\"2\" fill=\"${alertBody}\" transform=\"rotate(45)\" />\n        <circle cx=\"0\" cy=\"0\" r=\"5\" fill=\"${alertColor}\" />\n        <circle cx=\"0\" cy=\"0\" r=\"2\" fill=\"${alertLight}\" />\n        <polygon points=\"0,-19 4,-14 -4,-14\" fill=\"${alertLight}\" />\n      </svg>`\n    \n      const icon = this.L.divIcon({\n      className: \"drone-marker\",\n      html: isAlpha ? svgAlpha : svgBeta,\n      iconSize: [44, 44],\n      iconAnchor: [22, 22],\n      popupAnchor: [0, -22]\n      })\n    \n      if (this.markers[key]) {\n      this.markers[key].setLatLng([drone.lat, drone.lon]).setIcon(icon)\n      } else {\n      this.markers[key] = this.L.marker([drone.lat, drone.lon], { icon }).addTo(this.maps[key])\n      }\n      this.maps[key].setView([drone.lat, drone.lon], 18)\n      },\n\n    battery(drone) {\n      if (!drone || drone.battery === undefined || drone.battery === null) return 0\n      return Math.max(0, Math.min(100, Math.round(drone.battery)))\n    },\n    format(value) {\n      if (value === undefined || value === null) return \"N/A\"\n      return Number(value).toFixed(2)\n    },\n    sensorStatus(drone) {\n      if (!drone) return \"N/A\"\n      if (drone.status === \"low_battery\") return \"CHECK_BAT\"\n      if (drone.status === \"returning\") return \"RTL_MODE\"\n      return \"OK\"\n    },\n    statusDot(drone) {\n      if (!drone) return \"dot gray\"\n      if (drone.battery <= 20) return \"dot red\"\n      if (drone.battery <= 50) return \"dot orange\"\n      return \"dot green\"\n    }\n  }\n}\n</script>\n\n<style>\n  .mission-dashboard {\n    width: 100%;\n    min-height: calc(100vh - 90px);\n    padding: 16px 18px;\n    box-sizing: border-box;\n    background: #f3f6f8;\n    color: #1f2933;\n    font-family: \"Segoe UI\", Arial, sans-serif;\n  }\n\n  .dashboard-grid {\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: 18px;\n    width: 100%;\n  }\n\n  .drone-column {\n  display: grid;\n  grid-template-rows: 200px 200px 270px;\n  gap: 12px;\n  min-width: 0;\n  }\n\n  .panel {\n    background: #ffffff;\n    border: 1px solid #d0d7de;\n    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.10);\n    border-radius: 8px;\n    overflow: hidden;\n    min-width: 0;\n  }\n\n  .panel-title {\n    height: 34px;\n    padding: 0 12px;\n    background: #e9eef3;\n    border-bottom: 1px solid #d0d7de;\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    font-size: 14px;\n    letter-spacing: 0.3px;\n    font-weight: 700;\n    color: #1f2933;\n    box-sizing: border-box;\n  }\n\n  .dot {\n    font-size: 18px;\n    line-height: 1;\n  }\n\n  .dot.green {\n    color: #2e7d32;\n  }\n\n  .dot.orange {\n    color: #ef6c00;\n  }\n\n  .dot.red {\n    color: #d32f2f;\n  }\n\n  .dot.gray {\n    color: #777;\n  }\n\n  .battery-layout {\n    height: calc(100% - 34px);\n    display: grid;\n    grid-template-columns: 110px minmax(260px, 1fr) 190px;\n    gap: 22px;\n    padding: 18px 20px;\n    box-sizing: border-box;\n    align-items: center;\n  }\n\n  .battery-graphic {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n    gap: 6px;\n    font-size: 12px;\n    color: #52616b;\n  }\n\n  .battery-shell {\n    width: 50px;\n    height: 100px;\n    border: 2px solid #607d8b;\n    position: relative;\n    display: flex;\n    align-items: flex-end;\n    padding: 3px;\n    box-sizing: border-box;\n    background: #f8fafc;\n  }\n\n  .battery-shell::before {\n    content: \"\";\n    position: absolute;\n    top: -8px;\n    left: 15px;\n    width: 16px;\n    height: 6px;\n    background: #607d8b;\n  }\n\n  .battery-level {\n    width: 100%;\n    background: linear-gradient(180deg, #81c784, #2e7d32);\n    transition: height 0.4s ease;\n  }\n\n  .battery-level.danger {\n    background: linear-gradient(180deg, #ef9a9a, #d32f2f);\n  }\n\n  .battery-graphic.orange .battery-level {\n    background: linear-gradient(180deg, #ffcc80, #ef6c00);\n  }\n\n  .battery-graphic.orange .battery-level.danger {\n    background: linear-gradient(180deg, #ef9a9a, #d32f2f);\n  }\n\n  .battery-main {\n    display: flex;\n    flex-direction: column;\n    justify-content: center;\n    min-width: 0;\n  }\n\n  .battery-percent {\n    font-size: 58px;\n    line-height: 1;\n    color: #263238;\n    font-weight: 500;\n    letter-spacing: 4px;\n    margin-bottom: 8px;\n  }\n\n  .dangerText {\n    color: #d32f2f;\n  }\n\n  .battery-label {\n    font-size: 12px;\n    color: #52616b;\n    margin-bottom: 10px;\n  }\n\n  .battery-bar {\n    width: 100%;\n    height: 9px;\n    background: #e0e6eb;\n    border: 1px solid #c4ccd3;\n    border-radius: 999px;\n    overflow: hidden;\n  }\n\n  .battery-bar-fill {\n    height: 100%;\n    background: #2e7d32;\n    transition: width 0.4s ease;\n  }\n\n  .battery-bar-fill.orange {\n    background: #ef6c00;\n  }\n\n  .battery-bar-fill.danger {\n    background: #d32f2f;\n  }\n\n  .telemetry-side {\n    display: flex;\n    flex-direction: column;\n    justify-content: center;\n    gap: 8px;\n    min-width: 0;\n  }\n\n  .mini-chart {\n    height: 26px;\n    width: 100%;\n    background:\n      linear-gradient(90deg, transparent 0%, rgba(25, 118, 210, 0.12) 50%, transparent 100%),\n      repeating-linear-gradient(90deg, #1976d2 0 8px, transparent 8px 14px);\n    opacity: 0.75;\n    border-bottom: 1px solid #1976d2;\n  }\n\n  .mini-chart.orange {\n    border-bottom-color: #ef6c00;\n    background:\n      linear-gradient(90deg, transparent 0%, rgba(239, 108, 0, 0.12) 50%, transparent 100%),\n      repeating-linear-gradient(90deg, #ef6c00 0 8px, transparent 8px 14px);\n  }\n\n  .mini-chart.second {\n    opacity: 0.45;\n  }\n\n  .small-stat {\n    font-size: 12px;\n    color: #263238;\n  }\n\n  .info-layout {\n  height: calc(100% - 34px);\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  gap: 18px;\n  padding: 18px 22px;\n  box-sizing: border-box;\n  }\n\n\n  .drone-diagram-svg {\n    flex-shrink: 0;\n    width: 96px;\n    height: 96px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n  }\n\n  .info-text {\n    font-size: 15px;\n    line-height: 1.65;\n    color: #263238;\n    display: flex;\n    flex-direction: column;\n    justify-content: center;\n  }\n\n  .info-text strong {\n    color: #111827;\n  }\n\n  .panel-map {\n    position: relative;\n  }\n\n  .mini-map {\n    height: calc(100% - 62px);\n    width: 100%;\n    filter: none;\n  }\n\n  .map-footer {\n    height: 28px;\n    padding: 0 12px;\n    background: #f8fafc;\n    border-top: 1px solid #d0d7de;\n    display: grid;\n    grid-template-columns: 1fr 1fr 1fr;\n    align-items: center;\n    font-size: 13px;\n    color: #263238;\n    box-sizing: border-box;\n  }\n\n  .map-footer span:nth-child(1) {\n    text-align: left;\n  }\n\n  .map-footer span:nth-child(2) {\n    text-align: center;\n  }\n\n  .map-footer span:nth-child(3) {\n    text-align: right;\n  }\n\n  .mission-marker {\n    background: transparent;\n    border: none;\n  }\n\n  .leaflet-container {\n    background: #eef2f5;\n  }\n\n  .leaflet-control-container {\n    display: none;\n  }\n\n  @media (max-width: 1100px) {\n    .battery-layout {\n      grid-template-columns: 90px 1fr;\n    }\n\n    .telemetry-side {\n      display: none;\n    }\n  }\n\n  @media (max-width: 900px) {\n    .dashboard-grid {\n      grid-template-columns: 1fr;\n    }\n\n    .drone-column {\n      grid-template-rows: auto auto 260px;\n    }\n\n    .battery-layout {\n      grid-template-columns: 80px 1fr;\n    }\n  }\n</style>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "widget:page",
+        "className": "",
+        "x": 290,
+        "y": 120,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f60b2c1c0a9a4d3f",
+        "type": "link in",
+        "z": "98d7b49c9211336c",
+        "name": "drone data in",
+        "links": [
+            "22b6e8ccb98cbcce"
+        ],
+        "x": 125,
+        "y": 120,
+        "wires": [
+            [
+                "761068443457a908"
+            ]
+        ]
+    },
+    {
+        "id": "1cad0297c25adb61",
+        "type": "ui-event",
+        "z": "98d7b49c9211336c",
+        "ui": "d556e9f3bf8cb501",
+        "name": "",
+        "x": 150,
+        "y": 200,
+        "wires": [
+            [
+                "0ce34e4e249fa31d"
+            ]
+        ]
+    },
+    {
+        "id": "0ce34e4e249fa31d",
+        "type": "function",
+        "z": "98d7b49c9211336c",
+        "name": "Update /map",
+        "func": "if (msg.payload?.page?.path === \"/map\") {\n    return { payload: \"show\" }\n}\nreturn null",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 200,
+        "wires": [
+            [
+                "761068443457a908"
+            ]
+        ]
+    },
+    {
+        "id": "761068443457a908",
+        "type": "ui-template",
+        "z": "98d7b49c9211336c",
+        "group": "",
+        "page": "a6c88f0caa76cd84",
+        "ui": "",
+        "name": "Full Drone Map",
+        "order": 1,
+        "width": "12",
+        "height": "12",
+        "head": "",
+        "format": "<template>\n  <div ref=\"mapContainer\" class=\"drone-map\"></div>\n</template>\n\n<script>\nexport default {\n  data() {\n    return {\n      map: null,\n      markers: {},\n      L: null,\n      lastDrones: []\n    }\n  },\n\n  async mounted() {\n    await this.loadLeaflet()\n    this.waitForVisibleAndInit()\n  },\n\n  watch: {\n    msg: {\n      async handler(newMsg) {\n        if (!newMsg || !newMsg.payload) return\n\n        await this.loadLeaflet()\n\n      if (newMsg.payload === \"show\") {\n        this.waitForVisibleAndInit()\n        return\n      }\n\n        if (!Array.isArray(newMsg.payload)) return\n\n        this.lastDrones = newMsg.payload\n\n        if (!this.map) {\n        this.waitForVisibleAndInit()\n        return\n        }\n        \n        this.map.invalidateSize()\n        this.updateMarkers(this.lastDrones)\n      },\n      deep: true\n    }\n  },\n\n  methods: {\n    resetMap() {\n      if (this.map) {\n        this.map.remove()\n        this.map = null\n      }\n\n      this.markers = {}\n    },\n\n    waitForVisibleAndInit() {\n      const tryInit = () => {\n      const el = this.$refs.mapContainer\n      \n      if (!el || el.offsetWidth === 0 || el.offsetHeight === 0) {\n      setTimeout(tryInit, 100)\n      return\n      }\n      \n      this.initMap()\n      \n      setTimeout(() => {\n      if (this.map) {\n      this.map.invalidateSize()\n      this.updateMarkers(this.lastDrones)\n      }\n      }, 200)\n      }\n      \n      tryInit()\n    },\n\n    async loadLeaflet() {\n      if (this.L) return\n\n      if (!document.getElementById(\"leaflet-css\")) {\n        const link = document.createElement(\"link\")\n        link.id = \"leaflet-css\"\n        link.rel = \"stylesheet\"\n        link.href = \"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\"\n        document.head.appendChild(link)\n      }\n\n      const leafletModule = await import(\"https://esm.sh/leaflet@1.9.4\")\n      this.L = leafletModule.default || leafletModule\n    },\n\n    initMap() {\n      if (this.map || !this.L) return\n\n      const el = this.$refs.mapContainer\n      if (!el) return\n\n      this.map = this.L.map(el, {\n        zoomControl: false,\n        dragging: false,\n        scrollWheelZoom: false,\n        doubleClickZoom: false,\n        boxZoom: false,\n        keyboard: false,\n        touchZoom: false\n      }).setView([41.1779, -8.6080], 18)\n\n      this.L.tileLayer(\"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png\", {\n        maxZoom: 18,\n        minZoom: 18,\n        attribution: \"&copy; OpenStreetMap contributors\"\n      }).addTo(this.map)\n    },\n\n    createDroneIcon(drone) {\n    const isAlert = drone.battery !== undefined && drone.battery <= 20 \n    const isAlpha=drone.id===\"Drone:001\" \n    const color=isAlert ? \"#d32f2f\" : (isAlpha ? \"#1565C0\" : \"#E65100\" ) \n    const light=isAlert ? \"#ef9a9a\" : (isAlpha ? \"#90CAF9\" : \"#FFCC80\" ) \n    const body=isAlert ? \"#c62828\" : (isAlpha ? \"#1976D2\" : \"#F57C00\" ) \n    const svgAlpha=` <svg width=\"44\" height=\"44\" viewBox=\"-38 -38 76 76\" xmlns=\"http://www.w3.org/2000/svg\">\n      <line x1=\"-22\" y1=\"-22\" x2=\"-10\" y2=\"-10\" stroke=\"${color}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n      <line x1=\"22\" y1=\"-22\" x2=\"10\" y2=\"-10\" stroke=\"${color}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n      <line x1=\"-22\" y1=\"22\" x2=\"-10\" y2=\"10\" stroke=\"${color}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n      <line x1=\"22\" y1=\"22\" x2=\"10\" y2=\"10\" stroke=\"${color}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n    \n      <circle cx=\"-26\" cy=\"-26\" r=\"10\" fill=\"${color}\" />\n      <circle cx=\"26\" cy=\"-26\" r=\"10\" fill=\"${color}\" />\n      <circle cx=\"-26\" cy=\"26\" r=\"10\" fill=\"${color}\" />\n      <circle cx=\"26\" cy=\"26\" r=\"10\" fill=\"${color}\" />\n    \n      <line x1=\"-33\" y1=\"-26\" x2=\"-19\" y2=\"-26\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <line x1=\"-26\" y1=\"-33\" x2=\"-26\" y2=\"-19\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n    \n      <line x1=\"19\" y1=\"-26\" x2=\"33\" y2=\"-26\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <line x1=\"26\" y1=\"-33\" x2=\"26\" y2=\"-19\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n    \n      <line x1=\"-33\" y1=\"26\" x2=\"-19\" y2=\"26\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <line x1=\"-26\" y1=\"19\" x2=\"-26\" y2=\"33\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n    \n      <line x1=\"19\" y1=\"26\" x2=\"33\" y2=\"26\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n      <line x1=\"26\" y1=\"19\" x2=\"26\" y2=\"33\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n    \n      <polygon points=\"0,-14 12,-7 12,7 0,14 -12,7 -12,-7\" fill=\"${body}\" />\n      <circle cx=\"0\" cy=\"0\" r=\"5\" fill=\"${color}\" />\n      <circle cx=\"0\" cy=\"0\" r=\"2\" fill=\"${light}\" />\n      <polygon points=\"0,-19 4,-14 -4,-14\" fill=\"${light}\" />\n      </svg>\n      `\n    \n      const svgBeta = `\n      <svg width=\"44\" height=\"44\" viewBox=\"-38 -38 76 76\" xmlns=\"http://www.w3.org/2000/svg\">\n        <line x1=\"-20\" y1=\"-26\" x2=\"-10\" y2=\"-10\" stroke=\"${color}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n        <line x1=\"20\" y1=\"-26\" x2=\"10\" y2=\"-10\" stroke=\"${color}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n        <line x1=\"-20\" y1=\"26\" x2=\"-10\" y2=\"10\" stroke=\"${color}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n        <line x1=\"20\" y1=\"26\" x2=\"10\" y2=\"10\" stroke=\"${color}\" stroke-width=\"3.5\" stroke-linecap=\"round\" />\n    \n        <rect x=\"-33\" y=\"-33\" width=\"18\" height=\"18\" rx=\"3\" fill=\"${color}\" />\n        <rect x=\"15\" y=\"-33\" width=\"18\" height=\"18\" rx=\"3\" fill=\"${color}\" />\n        <rect x=\"-33\" y=\"15\" width=\"18\" height=\"18\" rx=\"3\" fill=\"${color}\" />\n        <rect x=\"15\" y=\"15\" width=\"18\" height=\"18\" rx=\"3\" fill=\"${color}\" />\n    \n        <line x1=\"-31\" y1=\"-31\" x2=\"-17\" y2=\"-17\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <line x1=\"-17\" y1=\"-31\" x2=\"-31\" y2=\"-17\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n    \n        <line x1=\"17\" y1=\"-31\" x2=\"31\" y2=\"-17\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <line x1=\"31\" y1=\"-31\" x2=\"17\" y2=\"-17\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n    \n        <line x1=\"-31\" y1=\"17\" x2=\"-17\" y2=\"31\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <line x1=\"-17\" y1=\"17\" x2=\"-31\" y2=\"31\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n    \n        <line x1=\"17\" y1=\"17\" x2=\"31\" y2=\"31\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n        <line x1=\"31\" y1=\"17\" x2=\"17\" y2=\"31\" stroke=\"${light}\" stroke-width=\"2.5\" stroke-linecap=\"round\" />\n    \n        <rect x=\"-12\" y=\"-12\" width=\"24\" height=\"24\" rx=\"2\" fill=\"${body}\" transform=\"rotate(45)\" />\n        <circle cx=\"0\" cy=\"0\" r=\"5\" fill=\"${color}\" />\n        <circle cx=\"0\" cy=\"0\" r=\"2\" fill=\"${light}\" />\n        <polygon points=\"0,-19 4,-14 -4,-14\" fill=\"${light}\" />\n      </svg>\n      `\n    \n      return this.L.divIcon({\n      className: \"drone-marker\",\n      html: isAlpha ? svgAlpha : svgBeta,\n      iconSize: [44, 44],\n      iconAnchor: [22, 22],\n      popupAnchor: [0, -22]\n      })\n      },\n\n    formatNumber(value) {\n      if (value === undefined || value === null) return \"N/A\"\n      return Number(value).toFixed(2)\n    },\n\n    updateMarkers(drones) {\n      if (!this.map || !this.L || !Array.isArray(drones)) return\n\n      for (const drone of drones) {\n        if (drone.lat === undefined || drone.lon === undefined) continue\n\n        const popup = `\n          <b>${drone.id}</b><br>\n          Battery: ${drone.battery ?? \"N/A\"}%<br>\n          X: ${this.formatNumber(drone.x)}<br>\n          Y: ${this.formatNumber(drone.y)}<br>\n          Status: ${drone.status ?? \"N/A\"}\n        `\n\n        const icon = this.createDroneIcon(drone)\n\n        if (this.markers[drone.id]) {\n          this.markers[drone.id]\n            .setLatLng([drone.lat, drone.lon])\n            .setIcon(icon)\n            .bindPopup(popup)\n        } else {\n          this.markers[drone.id] = this.L\n            .marker([drone.lat, drone.lon], { icon })\n            .addTo(this.map)\n            .bindPopup(popup)\n\n          this.markers[drone.id].on(\"mouseover\", function () {\n            this.openPopup()\n          })\n\n          this.markers[drone.id].on(\"mouseout\", function () {\n            this.closePopup()\n          })\n        }\n      }\n    }\n  }\n}\n</script>\n\n<style>\n  .drone-map {\n    width: 100vw;\n    height: 100vh;\n    position: fixed;\n    top: 0;\n    left: 0;\n    z-index: 0;\n    overflow: hidden;\n  }\n\n  .leaflet-container {\n    width: 100%;\n    height: 100%;\n  }\n\n  .drone-marker {\n    background: transparent;\n    border: none;\n  }\n</style>",
+        "storeOutMessages": true,
+        "passthru": true,
+        "resendOnRefresh": true,
+        "templateScope": "widget:page",
+        "className": "",
+        "x": 560,
+        "y": 120,
+        "wires": [
+            []
+        ]
+    }
+]

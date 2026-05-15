@@ -52,17 +52,17 @@ services:
       - IOTA_MONGO_URI=mongodb://mongo-db:27017/iotagentjson
       - IOTA_MQTT_HOST=mosquitto
       - IOTA_MQTT_PORT=1883
-      - IOTA_PROVIDER_URL=http://iot-agent:4041
   # Configure the IoT Agent for drones
   iot-agent-provisioner:
-    image: alpine:3.20
+    image: python:3.12-alpine
     container_name: iot-agent-provisioner
     depends_on:
       - iot-agent
       - fiware-orion
     volumes:
-      - ./provisioning/provision-iot-agent.sh:/provision-iot-agent.sh
-    entrypoint: ["/bin/sh", "-c", "apk add --no-cache curl && /bin/sh /provision-iot-agent.sh"]
+      - ./provisioning/provision_iot_agent.py:/app/provision_iot_agent.py
+    working_dir: /app
+    entrypoint: ["python", "/app/provision_iot_agent.py"]
     restart: "no"
 
   # 5. Logs DB for Control Tower notification persistence
@@ -188,3 +188,4 @@ services:
             }
           }'
     restart: "no"
+

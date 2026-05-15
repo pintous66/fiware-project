@@ -1,5 +1,5 @@
 services:
-  # 1. Base de Dados
+  # 1. Database
   mongo-db:
     image: mongo:4.4
     hostname: mongo-db
@@ -19,7 +19,7 @@ services:
       - "1026:1026"
     command: -dbURI mongodb://mongo-db:27017 -logLevel DEBUG
 
-  # 3. Mosquitto MQTT (O Canal de Comunicação dos Drones)
+  # 3. Mosquitto MQTT (Drone communication channel)
   mosquitto:
     image: eclipse-mosquitto:2
     hostname: mosquitto
@@ -53,7 +53,7 @@ services:
       - IOTA_MQTT_HOST=mosquitto
       - IOTA_MQTT_PORT=1883
       - IOTA_PROVIDER_URL=http://iot-agent:4041
-  # Config iot agent para drones      
+  # Configure the IoT Agent for drones
   iot-agent-provisioner:
     image: alpine:3.20
     container_name: iot-agent-provisioner
@@ -64,7 +64,16 @@ services:
       - ./provisioning/provision-iot-agent.sh:/provision-iot-agent.sh
     entrypoint: ["/bin/sh", "-c", "apk add --no-cache curl && /bin/sh /provision-iot-agent.sh"]
     restart: "no"
-#drone 1    
+
+  # 5. Logs DB for Control Tower notification persistence
+  logs-db:
+    image: mongo:4.4
+    hostname: logs-db
+    container_name: logs-db
+    command: --nojournal
+    volumes:
+      - ./logs-db:/data/db
+  # Drone 1
   drone1:
     build:
       context: ./drones
@@ -82,7 +91,7 @@ services:
       - BATTERY_LOSS_PER_MOVE=0.1
       - CHARGE_RATE=2
     restart: unless-stopped
- # drone 2
+  # Drone 2
   drone2:
     build:
       context: ./drones
@@ -100,7 +109,7 @@ services:
       - BATTERY_LOSS_PER_MOVE=0.1
       - CHARGE_RATE=2
     restart: unless-stopped
-    # control tower
+    # Control tower
   control-tower:
     build:
       context: ./control-tower
@@ -108,6 +117,7 @@ services:
     depends_on:
       - fiware-orion
       - iot-agent
+      - logs-db
       - drone1
       - drone2
     ports:
@@ -119,6 +129,9 @@ services:
       - DRONE_ENTITIES=Drone1,Drone2
       - LOW_BATTERY_THRESHOLD=20
       - NOTIFICATION_URL=http://control-tower:8080/notify
+      - LOGS_DB_URL=mongodb://logs-db:27017
+      - LOGS_DB_NAME=control_tower_logs
+      - LOGS_DB_COLLECTION=notifications
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
 

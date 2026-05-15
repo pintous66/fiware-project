@@ -17,6 +17,7 @@ flowchart TD
     subgraph Applications["Applications"]
         CT["Control Tower"]
         CTDB["Control Tower DB<br/>Historical Telemetry"]
+        LDB["Logs DB<br/>Notification Archive"]
         NR["Node-RED Dashboard"]
         P["Provisioner<br/>Startup Helper<br/>IoT Agent Configuration"]
     end
@@ -31,6 +32,7 @@ flowchart TD
     CT --> O
 
     CT --> CTDB
+    CT --> LDB
     NR --> O
     NR --> CTDB
 

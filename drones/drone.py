@@ -33,18 +33,18 @@ class DroneSimulator:
 
         self.x = 0.0
         self.y = 0.0
-        self.battery = 100.0
+        self.battery = random.uniform(50.0, 100.0)
         self.status = self.STATUS_FLYING
 
         self.returning_to_base = False
 
         self.attrs_topic = f"/json/{self.config.api_key}/{self.config.drone_id}/attrs"
 
-        # O tópico esperado no teu setup, porque a telemetria usa /json/...
+        # Expected topic in this setup, because telemetry uses /json/...
         self.command_topics = [
             f"/json/{self.config.api_key}/{self.config.drone_id}/cmd",
 
-            # Tópicos alternativos para compatibilidade com algumas configurações do IoT Agent JSON.
+            # Alternative topics for compatibility with some IoT Agent JSON configurations.
             f"json/{self.config.api_key}/{self.config.drone_id}/cmd",
             f"/{self.config.api_key}/{self.config.drone_id}/cmd",
             f"{self.config.api_key}/{self.config.drone_id}/cmd",
@@ -63,7 +63,7 @@ class DroneSimulator:
 
     def connect(self) -> None:
         print(
-            f"[{self.config.drone_id}] A ligar ao MQTT "
+            f"[{self.config.drone_id}] Connecting to MQTT "
             f"{self.config.mqtt_host}:{self.config.mqtt_port}"
         )
 
@@ -77,14 +77,14 @@ class DroneSimulator:
 
     def on_connect(self, client, userdata, flags, rc) -> None:
         if rc != 0:
-            print(f"[{self.config.drone_id}] Erro ao ligar ao MQTT. Código: {rc}")
+            print(f"[{self.config.drone_id}] Error connecting to MQTT. Code: {rc}")
             return
 
-        print(f"[{self.config.drone_id}] Ligado ao MQTT.")
+        print(f"[{self.config.drone_id}] Connected to MQTT.")
 
         for topic in self.command_topics:
             client.subscribe(topic)
-            print(f"[{self.config.drone_id}] À escuta de comandos em: {topic}")
+            print(f"[{self.config.drone_id}] Listening for commands on: {topic}")
 
         self.publish_telemetry()
 
@@ -92,7 +92,7 @@ class DroneSimulator:
         payload = msg.payload.decode("utf-8", errors="replace")
 
         print(
-            f"[{self.config.drone_id}] Mensagem recebida no tópico "
+            f"[{self.config.drone_id}] Message received on topic "
             f"{msg.topic}: {payload}"
         )
 
@@ -102,16 +102,16 @@ class DroneSimulator:
             self.handle_return_to_base_command()
         else:
             print(
-                f"[{self.config.drone_id}] Comando ignorado ou desconhecido: "
+                f"[{self.config.drone_id}] Ignored or unknown command: "
                 f"{command_name}"
             )
 
     def extract_command_name(self, payload: str) -> str | None:
         """
-        O IoT Agent JSON pode enviar comandos MQTT com payloads ligeiramente diferentes,
-        dependendo da versão/configuração.
+        The IoT Agent JSON can send MQTT commands with slightly different payloads,
+        depending on the version/configuration.
 
-        Exemplos possíveis:
+        Possible examples:
         {"return_to_base": ""}
         {"return_to_base": true}
         return_to_base
@@ -129,12 +129,12 @@ class DroneSimulator:
                 if self.COMMAND_RETURN_TO_BASE in data:
                     return self.COMMAND_RETURN_TO_BASE
 
-                # Caso venha algo como {"command": "return_to_base"}
+                # If it arrives as {"command": "return_to_base"}
                 command = data.get("command")
                 if command == self.COMMAND_RETURN_TO_BASE:
                     return self.COMMAND_RETURN_TO_BASE
 
-                # Caso venha algo como {"name": "return_to_base"}
+                # If it arrives as {"name": "return_to_base"}
                 name = data.get("name")
                 if name == self.COMMAND_RETURN_TO_BASE:
                     return self.COMMAND_RETURN_TO_BASE
@@ -148,7 +148,7 @@ class DroneSimulator:
         return None
 
     def handle_return_to_base_command(self) -> None:
-        print(f"[{self.config.drone_id}] Comando recebido: voltar à base.")
+        print(f"[{self.config.drone_id}] Command received: return to base.")
 
         self.returning_to_base = True
         self.status = self.STATUS_FLYING
@@ -165,12 +165,12 @@ class DroneSimulator:
             }
         )
 
-        # Publica no primeiro tópico, que corresponde ao teu formato /json/...
+        # Publishes to the first topic, which matches the /json/... format.
         topic = self.command_result_topics[0]
 
         self.client.publish(topic, payload)
         print(
-            f"[{self.config.drone_id}] Resultado do comando publicado em "
+            f"[{self.config.drone_id}] Command result published on "
             f"{topic}: {payload}"
         )
 
@@ -185,7 +185,7 @@ class DroneSimulator:
         self.client.publish(self.attrs_topic, json.dumps(payload))
 
         print(
-            f"[{self.config.drone_id}] Telemetria enviada para {self.attrs_topic}: "
+            f"[{self.config.drone_id}] Telemetry sent to {self.attrs_topic}: "
             f"{payload}"
         )
 
@@ -198,7 +198,7 @@ class DroneSimulator:
                 time.sleep(self.config.movement_interval)
 
         except KeyboardInterrupt:
-            print(f"[{self.config.drone_id}] A terminar simulador...")
+            print(f"[{self.config.drone_id}] Shutting down simulator...")
 
         finally:
             self.client.loop_stop()
@@ -232,7 +232,7 @@ class DroneSimulator:
             self.y = self.clamp(self.y + movement)
 
         print(
-            f"[{self.config.drone_id}] Movimento aleatório: "
+            f"[{self.config.drone_id}] Random move: "
             f"({old_x:.1f}, {old_y:.1f}) -> ({self.x:.1f}, {self.y:.1f})"
         )
 
@@ -246,12 +246,12 @@ class DroneSimulator:
             self.y = max(0.0, self.y - self.config.movement_step)
 
         print(
-            f"[{self.config.drone_id}] A regressar à base: "
+            f"[{self.config.drone_id}] Returning to base: "
             f"({old_x:.1f}, {old_y:.1f}) -> ({self.x:.1f}, {self.y:.1f})"
         )
 
         if self.x == 0.0 and self.y == 0.0:
-            print(f"[{self.config.drone_id}] Chegou à base. A carregar.")
+            print(f"[{self.config.drone_id}] Reached base. Charging.")
             self.status = self.STATUS_CHARGING
             self.returning_to_base = False
 
@@ -270,7 +270,7 @@ class DroneSimulator:
         )
 
         print(
-            f"[{self.config.drone_id}] A carregar: "
+            f"[{self.config.drone_id}] Charging: "
             f"{old_battery:.1f}% -> {self.battery:.1f}%"
         )
 
@@ -278,8 +278,8 @@ class DroneSimulator:
             self.battery = 80.0
             self.status = self.STATUS_FLYING
             print(
-                f"[{self.config.drone_id}] Carga chegou aos 80%. "
-                f"A voltar ao estado flying."
+                f"[{self.config.drone_id}] Charge reached 80%. "
+                f"Returning to flying state."
             )
 
     def clamp(self, value: float) -> float:
@@ -294,7 +294,7 @@ def load_config() -> DroneConfig:
         mqtt_port=int(os.getenv("MQTT_PORT", "1883")),
         movement_interval=float(os.getenv("MOVEMENT_INTERVAL", "2")),
         movement_step=float(os.getenv("MOVEMENT_STEP", "1")),
-        battery_loss_per_move=float(os.getenv("BATTERY_LOSS_PER_MOVE", "0.1")),
+        battery_loss_per_move=float(os.getenv("BATTERY_LOSS_PER_MOVE", "0.1")) + random.uniform(0, 1),
         charge_rate=float(os.getenv("CHARGE_RATE", "2")),
     )
 
@@ -303,7 +303,7 @@ if __name__ == "__main__":
     start_delay = float(os.getenv("START_DELAY", "0"))
 
     if start_delay > 0:
-        print(f"A aguardar {start_delay} segundos antes de iniciar o drone...")
+        print(f"Waiting {start_delay} seconds before starting the drone...")
         time.sleep(start_delay)
 
     config = load_config()

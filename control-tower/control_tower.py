@@ -1,9 +1,12 @@
 import os
 import time
+from datetime import datetime, timezone
 from typing import Any
 
 import requests
 from flask import Flask, jsonify, request
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 
 
 app = Flask(__name__)
@@ -22,6 +25,9 @@ NOTIFICATION_URL = os.getenv(
     "NOTIFICATION_URL",
     "http://control-tower:8080/notify",
 )
+LOGS_DB_URL = os.getenv("LOGS_DB_URL", "mongodb://logs-db:27017")
+LOGS_DB_NAME = os.getenv("LOGS_DB_NAME", "control_tower_logs")
+LOGS_DB_COLLECTION = os.getenv("LOGS_DB_COLLECTION", "notifications")
 
 HEADERS = {
     "fiware-service": FIWARE_SERVICE,
@@ -34,6 +40,7 @@ JSON_HEADERS = {
 }
 
 command_sent: set[str] = set()
+logs_collection = None
 
 
 def log(message: str) -> None:
@@ -48,6 +55,54 @@ def get_attr_value(entity: dict[str, Any], attr_name: str) -> Any:
         return None
 
     return attr.get("value")
+
+
+def connect_logs_db() -> None:
+    global logs_collection
+
+    client = MongoClient(LOGS_DB_URL, serverSelectionTimeoutMS=3000)
+    client.admin.command("ping")
+    logs_collection = client[LOGS_DB_NAME][LOGS_DB_COLLECTION]
+
+
+def wait_for_logs_db() -> None:
+    log("Waiting for the logs database...")
+
+    while True:
+        try:
+            connect_logs_db()
+            log("Logs database is available.")
+            return
+        except (ServerSelectionTimeoutError, PyMongoError):
+            time.sleep(2)
+
+
+def persist_notification(notification: dict[str, Any]) -> None:
+    if logs_collection is None:
+        log("Logs database not initialized; notification was not persisted.")
+        return
+
+    document = {
+        "subscription_id": notification.get("subscriptionId"),
+        "received_at": datetime.now(timezone.utc).isoformat(),
+        "data": notification.get("data", []),
+        "raw_notification": notification,
+    }
+
+    try:
+        logs_collection.insert_one(document)
+    except PyMongoError as error:
+        log(f"Failed to persist notification: {error}")
+
+
+def serialize_log_entry(entry: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": str(entry.get("_id", "")),
+        "subscription_id": entry.get("subscription_id"),
+        "received_at": entry.get("received_at"),
+        "data": entry.get("data", []),
+        "raw_notification": entry.get("raw_notification", {}),
+    }
 
 
 def send_return_to_base(entity_id: str) -> None:
@@ -81,44 +136,44 @@ def evaluate_drone(entity: dict[str, Any]) -> None:
     status = get_attr_value(entity, "status")
 
     log(
-        f"[{entity_id}] Notificação recebida: "
+        f"[{entity_id}] Notification received: "
         f"battery={battery}, x={x}, y={y}, status={status}"
     )
 
     if battery is None:
-        log(f"[{entity_id}] Decisão: nada. Bateria ainda não disponível.")
+        log(f"[{entity_id}] Decision: nothing to do. Battery is not available yet.")
         return
 
     if status is None:
-        log(f"[{entity_id}] Decisão: nada. Estado ainda não disponível.")
+        log(f"[{entity_id}] Decision: nothing to do. Status is not available yet.")
         return
 
     try:
         battery_value = float(battery)
     except ValueError:
-        log(f"[{entity_id}] Decisão: nada. Valor de bateria inválido: {battery}")
+        log(f"[{entity_id}] Decision: nothing to do. Invalid battery value: {battery}")
         return
 
     if status == "charging":
         command_sent.discard(entity_id)
-        log(f"[{entity_id}] Decisão: nada. Drone está a carregar.")
+        log(f"[{entity_id}] Decision: nothing to do. Drone is charging.")
         return
 
     if status != "flying":
-        log(f"[{entity_id}] Decisão: nada. Estado desconhecido: {status}")
+        log(f"[{entity_id}] Decision: nothing to do. Unknown status: {status}")
         return
 
     if battery_value < LOW_BATTERY_THRESHOLD:
         if entity_id in command_sent:
             log(
-                f"[{entity_id}] Decisão: nada. "
-                f"Comando de regresso já tinha sido enviado."
+                f"[{entity_id}] Decision: nothing to do. "
+                f"Return command was already sent."
             )
             return
 
         log(
-            f"[{entity_id}] Decisão: mandar voltar à base. "
-            f"Bateria {battery_value:.1f}% < {LOW_BATTERY_THRESHOLD:.1f}%."
+            f"[{entity_id}] Decision: send return-to-base command. "
+            f"Battery {battery_value:.1f}% < {LOW_BATTERY_THRESHOLD:.1f}%."
         )
 
         send_return_to_base(entity_id)
@@ -129,8 +184,8 @@ def evaluate_drone(entity: dict[str, Any]) -> None:
         command_sent.discard(entity_id)
 
     log(
-        f"[{entity_id}] Decisão: nada. "
-        f"Bateria suficiente ({battery_value:.1f}%)."
+        f"[{entity_id}] Decision: nothing to do. "
+        f"Battery is sufficient ({battery_value:.1f}%)."
     )
 
 
@@ -144,21 +199,47 @@ def notify():
     notification = request.get_json(silent=True)
 
     if not notification:
-        log("Notificação inválida recebida.")
+        log("Invalid notification received.")
         return jsonify({"error": "Invalid notification"}), 400
 
     subscription_id = notification.get("subscriptionId")
     data = notification.get("data", [])
 
     log(
-        f"Notificação do Orion recebida. "
+        f"Orion notification received. "
         f"subscriptionId={subscription_id}, entities={len(data)}"
     )
+
+    persist_notification(notification)
 
     for entity in data:
         evaluate_drone(entity)
 
     return jsonify({"status": "received"}), 200
+
+
+@app.route("/logs/<int:count>", methods=["GET"])
+def get_logs(count: int):
+    if count <= 0:
+        return jsonify({"error": "count must be a positive integer"}), 400
+
+    if logs_collection is None:
+        return jsonify({"error": "Logs database is not available"}), 503
+
+    try:
+        documents = list(
+            logs_collection.find().sort("_id", -1).limit(count)
+        )
+    except PyMongoError as error:
+        log(f"Failed to fetch logs: {error}")
+        return jsonify({"error": "Failed to fetch logs"}), 500
+
+    return jsonify(
+        {
+            "count": len(documents),
+            "logs": [serialize_log_entry(document) for document in documents],
+        }
+    ), 200
 
 
 def delete_existing_subscriptions() -> None:
@@ -188,7 +269,7 @@ def delete_existing_subscriptions() -> None:
             )
 
             delete_response.raise_for_status()
-            log(f"Subscrição antiga removida: {subscription_id}")
+            log(f"Old subscription removed: {subscription_id}")
 
 
 def create_subscription() -> None:
@@ -228,11 +309,11 @@ def create_subscription() -> None:
     response.raise_for_status()
 
     subscription_id = response.headers.get("Location", "unknown")
-    log(f"Subscrição criada no Orion: {subscription_id}")
+    log(f"Subscription created in Orion: {subscription_id}")
 
 
 def wait_for_orion() -> None:
-    log("A aguardar pelo Orion...")
+    log("Waiting for Orion...")
 
     while True:
         try:
@@ -242,7 +323,7 @@ def wait_for_orion() -> None:
             )
 
             if response.status_code == 200:
-                log("Orion disponível.")
+                log("Orion is available.")
                 return
 
         except requests.RequestException:
@@ -252,13 +333,14 @@ def wait_for_orion() -> None:
 
 
 def startup() -> None:
-    log("Control Tower iniciada em modo subscrição.")
+    log("Control Tower started in subscription mode.")
     log(f"Orion URL: {ORION_URL}")
     log(f"Notification URL: {NOTIFICATION_URL}")
-    log(f"Drones monitorizados: {', '.join(DRONE_ENTITIES)}")
-    log(f"Limite de bateria baixa: {LOW_BATTERY_THRESHOLD}%")
+    log(f"Monitored drones: {', '.join(DRONE_ENTITIES)}")
+    log(f"Low battery threshold: {LOW_BATTERY_THRESHOLD}%")
 
     wait_for_orion()
+    wait_for_logs_db()
     delete_existing_subscriptions()
     create_subscription()
 

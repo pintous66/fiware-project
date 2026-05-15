@@ -62,7 +62,7 @@ services:
       - fiware-orion
     volumes:
       - ./provisioning/provision-iot-agent.sh:/provision-iot-agent.sh
-    entrypoint: ["/bin/sh", "-c", "apk add --no-cache curl && /bin/sh /provision-iot-agent.sh"]
+    entrypoint: ["/bin/sh", "-c", "apk add --no-cache curl dos2unix && dos2unix /provision-iot-agent.sh && /bin/sh /provision-iot-agent.sh"]
     restart: "no"
 
   # 5. Logs DB for Control Tower notification persistence

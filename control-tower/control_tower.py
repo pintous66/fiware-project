@@ -105,8 +105,8 @@ def serialize_log_entry(entry: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def send_return_to_base(entity_id: str) -> None:
-    url = f"{ORION_URL}/v2/entities/{entity_id}/attrs"
+def send_return_to_base(entity_id: str) -> bool:
+    url = f"{ORION_URL}/v2/entities/{entity_id}/attrs?type=Drone"
 
     payload = {
         "return_to_base": {
@@ -115,16 +115,27 @@ def send_return_to_base(entity_id: str) -> None:
         }
     }
 
-    response = requests.patch(
-        url,
-        headers=JSON_HEADERS,
-        json=payload,
-        timeout=5,
-    )
+    try:
+        response = requests.patch(
+            url,
+            headers=JSON_HEADERS,
+            json=payload,
+            timeout=5,
+        )
 
-    response.raise_for_status()
+        if response.status_code == 404:
+            log(
+                f"[{entity_id}] Orion entity not found while sending return_to_base."
+            )
+            return False
 
-    log(f"[{entity_id}] Comando enviado ao Orion: return_to_base")
+        response.raise_for_status()
+    except requests.RequestException as error:
+        log(f"[{entity_id}] Failed to send return_to_base command: {error}")
+        return False
+
+    log(f"[{entity_id}] Command sent to Orion: return_to_base")
+    return True
 
 
 def evaluate_drone(entity: dict[str, Any]) -> None:
@@ -176,8 +187,8 @@ def evaluate_drone(entity: dict[str, Any]) -> None:
             f"Battery {battery_value:.1f}% < {LOW_BATTERY_THRESHOLD:.1f}%."
         )
 
-        send_return_to_base(entity_id)
-        command_sent.add(entity_id)
+        if send_return_to_base(entity_id):
+            command_sent.add(entity_id)
         return
 
     if entity_id in command_sent:
